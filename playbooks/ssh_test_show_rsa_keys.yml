@@ -1,0 +1,12 @@
+---
+
+- hosts: "{{host}}"
+  remote_user: root
+  tasks:
+
+  - name: ssh testing
+    shell: cat /root/.ssh/authorized_keys
+    register: response
+
+  - debug: var="{{response}}"
+    

@@ -1,0 +1,45 @@
+---
+
+#  Just more testing on auth tokens - nothing big here....
+
+
+- hosts: "{{ host }}"
+  connection: local
+  vars:
+    #username: "{{username}}"
+    #latest_passwd: "{{latest_pass}}"
+    provider: "{{bigiq_logon_provider}}"
+    auth_body:
+      username: "{{username}}"
+      password: "{{latest_passwd}}"
+      logonProviderName: "{{provider}}"
+  gather_facts: yes
+  tasks:
+
+  - name: Get bigiq auth token
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/shared/authn/login"
+      method: POST
+      body_format: json
+      return_content: true
+      validate_certs: false
+      # logingProviderName: should typically be tmos
+      body: "{{auth_body}}"
+      status_code: 200
+    register: bigiq_auth_token
+    delegate_to: localhost
+
+  - name: Store bigiq auth token in inventory file
+    blockinfile:
+      path: "{{inventory_file}}"  # magic ansible variable
+      marker: "#--- {mark} {{username}} bigiq auth token ---"
+      insertafter: "### bigiq auth token ###"
+      content: |
+        #[bigiq_auth_token:vars]
+        #User/date/time  {{username}} - {{ansible_date_time.iso8601}}
+        token="{{bigiq_auth_token.json.token.token}}"
+        token_timeout="{{bigiq_auth_token.json.token.timeout}}"
+        token_exp="{{bigiq_auth_token.json.token.exp}}"
+        refresh_token="{{bigiq_auth_token.json.refreshToken.token}}"
+        refresh_token_timeout="{{bigiq_auth_token.json.refreshToken.timeout}}"
+        refresh_token_exp="{{bigiq_auth_token.json.refreshToken.exp}}"

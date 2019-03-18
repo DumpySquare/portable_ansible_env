@@ -1,0 +1,35 @@
+---
+
+- name: Get current ssh authorized keys
+  uri:
+    url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+    method: POST
+    body: '{"command":"run", "utilCmdArgs": "-c ''cat /root/.ssh/authorized_keys''"}'
+    body_format: json
+    validate_certs: no
+    force_basic_auth: yes
+    user: "{{ username }}"
+    password: "{{ latest_passwd }}"
+    headers:
+      Content-Type: "application/json"
+  register: current_authorized_keys
+  delegate_to: localhost
+
+#- name: Display current ssh authorized keys
+#  debug: msg="Authorized keys= {{current_authorized_keys.json.commandResult}}" 
+
+- name: Add rsa pub id
+  uri:
+    url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+    method: POST
+    body: '{"command":"run", "utilCmdArgs": "-c ''echo {{rsa_pub_id}} >> /root/.ssh/authorized_keys''"}'
+    body_format: json
+    validate_certs: no
+    force_basic_auth: yes
+    user: "{{ username }}"
+    password: "{{ latest_passwd }}"
+    headers:
+      Content-Type: "application/json"
+  delegate_to: localhost
+  when: "rsa_pub_id not in current_authorized_keys.json.commandResult"
+    

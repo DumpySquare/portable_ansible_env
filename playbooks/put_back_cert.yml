@@ -1,0 +1,122 @@
+---
+
+# used to put back defualt certificate for testing of regen device cert playbook/script
+- hosts: "{{ host }}"
+  connection: local
+  gather_facts: no
+  tasks:
+
+  - name: Get device hostname
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+      method: POST
+      body: 
+        command: run
+        utilCmdArgs: "-c 'echo $HOSTNAME'"
+      body_format: json
+      validate_certs: no
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      headers:
+        Content-Type: "application/json"
+    register: json_result
+      
+  - name: Extract hostname form json_result and remove trailing line return
+    set_fact: 
+      hostname: "{{hostname_result.json.commandResult  | replace('\n', '')}}"
+
+  - name: Check current device cert subj
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+      method: POST
+      body: '{"command":"run", "utilCmdArgs": "-c ''openssl x509 -noout -subject -in /config/httpd/conf/ssl.crt/server.crt''"}'
+      body_format: json
+      validate_certs: no
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      headers:
+        Content-Type: "application/json"
+    register: current_cert_subject
+
+
+  - name: Check .old device cert
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+      method: POST
+      body: '{"command":"run", "utilCmdArgs": "-c ''openssl x509 -noout -subject -in /config/httpd/conf/ssl.crt/server.crt.old''"}'
+      body_format: json
+      validate_certs: no
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      headers:
+        Content-Type: "application/json"
+    register: old_cert_subject
+
+
+  - name: Check info before proceed
+    debug: 
+      msg:
+        - "*****  Want to put the old device certificate back?   *****"
+        - "   Hostname:     {{hostname}}"
+        - "   Current cert subj:     {{current_cert_subject.json.commandResult}}"
+        - "   .old cert subj:     {{old_cert_subject.json.commandResult}}"
+  - pause: prompt="Continue with cert revert?"
+
+  - name: Put cert back
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+      method: POST
+      body: 
+        command: run
+        utilCmdArgs: "-c 'mv -f {{fullcert}}.old {{fullcert}} && mv -f {{fullkey}}.old {{fullkey}}'"
+      body_format: json
+      validate_certs: no
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      headers:
+        Content-Type: "application/json"
+    register: certkeyback_result
+    
+
+  # this should execute and cause a disconnect/fail, but should still have succeeded
+  - name: restart httpd
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+      method: POST
+      body: 
+        command: run
+        utilCmdArgs: "-c 'tmsh restart sys service httpd'"
+      body_format: json
+      validate_certs: no
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      headers:
+        Content-Type: "application/json"
+    ignore_errors: yes  # so we can continue
+
+  - name: wait for 3 seconds to make sure httpd started
+    wait_for: timeout=3
+
+
+  - name: Recheck current device cert
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+      method: POST
+      body: '{"command":"run", "utilCmdArgs": "-c ''openssl x509 -noout -subject -in /config/httpd/conf/ssl.crt/server.crt''"}'
+      body_format: json
+      validate_certs: no
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      headers:
+        Content-Type: "application/json"
+    register: last_cert_subject
+
+
+  - name: Display current device cert subj
+    debug: msg="Current device cert subj= {{last_cert_subject.json.commandResult}}"

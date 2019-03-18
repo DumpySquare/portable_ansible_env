@@ -1,0 +1,71 @@
+---
+# Ansible playbook to import F5 BIG-IQ device inventory to Ansible INI inventory
+
+# fetches bigiq auth token, calls device list via api, 
+# Adds bigiq devices with hostname,mgmt-ip, uuid and some header info
+# to end of current inventory defined to run play
+#   Ben Gordon (b.gordon@f5.com)
+
+# header information includes date/time and source hostname/IP
+
+- hosts: "{{host}}"
+  connection: local
+  gather_facts: yes
+  tasks:
+
+  - name: get auth token
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/shared/authn/login"
+      method: POST
+      body_format: json
+      return_content: true
+      validate_certs: false
+      body: 
+        username: "{{username}}"
+        password: "{{latest_passwd}}"
+        logonProviderName: "{{provider}}" 
+      status_code: 200
+    register: token
+  
+  - name: Calling API to get BIG-IQ device list for Ansible inventory
+    uri:
+      url: https://{{ ansible_host }}/mgmt/shared/resolver/device-groups/cm-bigip-allDevices/devices?$select=hostname,managementAddress,uuid
+      method: GET
+      return_content: yes
+      status_code: 200
+      validate_certs: no
+      headers:
+        X-F5-Auth-Token: "{{token.json.token.token}}"
+        Content-Type: "application/json"
+        body_format: json
+    register: json_response
+
+  - name: convert json items to lines
+    set_fact: 
+      devices: "{{ item.hostname }}   ansible_host={{ item.managementAddress }}   uuid={{ item.uuid }}"
+    with_items: "{{ json_response['json']['items'] }}"
+    register: device_lines
+
+  - name: fact lines to list
+    set_fact: 
+      devices_list: "{{ device_lines.results | map(attribute='ansible_facts.devices') | list }}"
+      
+  - name: Count number of devices returned
+    set_fact:
+      devices_number: "{{devices_list|length}}"
+
+  #- debug: var=devices_list
+
+  - name: Add bigiq devices to current inventory
+    blockinfile:
+      path: "{{inventory_file}}"  # magic ansible variable for current play inventory file
+      marker: "#--- {mark} imported bigiq inventory ---"
+      insertafter: eof
+      content: |
+        [bigiq_devices]
+        # Big-IQ inventory imported from {{ inventory_hostname }} @ {{ ansible_host }}
+        # {{devices_number}} devices imported on {{ ansible_date_time.iso8601 }}
+        {% for item in devices_list %}
+        {{ item }}
+        {% endfor %}
+

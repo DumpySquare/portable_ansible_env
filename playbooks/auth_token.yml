@@ -1,0 +1,18 @@
+---
+
+
+- name: get auth token
+  uri:
+    url: "https://{{ ansible_host }}/mgmt/shared/authn/login"
+    method: POST
+    body_format: json
+    return_content: true
+    validate_certs: false
+    # logingProviderName: should typically be tmos
+    body: 
+      username: "{{username}}"
+      password: "{{latest_passwd}}"
+      logonProviderName: "{{provider}}"
+    status_code: 200
+  register: token
+  #delegate_to: localhost

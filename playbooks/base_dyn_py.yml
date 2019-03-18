@@ -1,0 +1,10 @@
+---
+
+- name: base config dyn script
+  script: "{{base_config_deploy_script}}"
+  remote_user: root
+  args:
+    executable: python
+  delegate_to: "{{ansible_host}}"
+   
+    

@@ -1,0 +1,93 @@
+---
+#  Playbook to complete necessary items in the f5 initial config wizard
+#    Update root/admin password, give admin advanced shell access (bash), 
+#    set ntp/dns, regen device certificate and admin routes
+
+# todo: set admin routes, check current device cert, push rsa pub key
+
+# admin routes aren't part of the initial configuration wizard, but they \
+#  are needed to get everything working for bigiq import mainly time sync
+
+- hosts: "{{ host }}"
+  connection: local
+  gather_facts: no
+  tasks:
+  
+#  - name: Initial config wizard plays
+#    block:
+
+
+  - include_tasks: set_admin_pass_from_default.yml
+  - include_tasks: set_admin_advance_shell.yml
+  
+  - include_tasks: add_rsa_pub_id.yml
+    when: rsa_pub_id is defined
+
+  - name: Get device hostname
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+      method: POST
+      body: 
+        command: run
+        utilCmdArgs: "-c 'echo $HOSTNAME'"
+      body_format: json
+      validate_certs: no
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      headers:
+        Content-Type: "application/json"
+    register: hostname_result  
+    # todo: research ansible fact = f5 hostname
+  
+  - name: Extract hostname form hostname_result
+    set_fact: 
+      #hostname: "{{hostname_result.json.commandResult.split(\".\")[0]}}"
+      hostname: "{{hostname_result.json.commandResult  | replace('\n', '')}}"
+
+  - include_tasks: set_root_pass.yml
+  - include_tasks: gui_setup_disable.yml
+
+  - include_tasks: regen_device_cert.yml
+      # uses hostname var
+  
+ 
+  - name:  set admin routes
+    include_tasks: set_admin_routes.yml
+    when: admin_routes is defined
+
+  - include_tasks: set_gui_banner.yml
+    when: gui_banner_color is defined
+
+  - include_tasks: set_snmp.yml
+
+  - include_tasks: set_syslog.yml
+
+  #- include_tasks: set_radiussysauth.yml
+  #- include_tasks: set_default_node_monitor.yml
+  #- include_tasks: set_gui_login_banner.yml
+  #- include_tasks: set_ssh_login_banner.yml
+  #- include_tasks: set_ssh_activity_timeout.yml
+
+  - include_tasks: dns.yml
+  - include_tasks: ntp.yml
+
+  #- include: no_update_phone_home.yml
+  #- include: set_preferences.yml
+  #- include_tasks: add_users.yml   
+
+  #- include_tasks: save_config.yml
+
+
+
+
+
+
+
+
+
+
+
+
+
+

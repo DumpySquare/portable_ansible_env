@@ -1,0 +1,12 @@
+---
+
+- hosts: "{{host}}"
+  connection: local
+  gather_facts: yes
+  tasks:
+
+# get license info - base key, add on keys, service check date
+# get dossier
+# submit dossier to activate.f5.com
+# apply license
+

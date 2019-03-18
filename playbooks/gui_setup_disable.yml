@@ -1,0 +1,13 @@
+---
+
+- name: Disable GUI setup utility
+  bigip_sys_global:
+    gui_setup: no
+    banner_text: "Ansible build in progress"
+    provider:
+      server: "{{ ansible_host }}"
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+    security_banner: yes
+    validate_certs: no
+  delegate_to: localhost

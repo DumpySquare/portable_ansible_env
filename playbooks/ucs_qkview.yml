@@ -1,0 +1,49 @@
+---
+#  Playbook to capture UCS and qkview of f5 devices
+#    - initial stab, work in progress
+
+- hosts: "{{host}}"
+  connection: local
+  #debugger: on_failed
+  #remote_user: root
+  #sudo: yes
+
+  tasks:
+
+  - name: Download a new UCS
+    bigip_ucs_fetch:
+      create_on_missing: yes
+      src: src.ucs
+      dest: ../../qkview_ucs/
+      backup: no
+      provider:
+        server: "{{ ansible_host }}"
+        user: "{{ username }}"
+        password: "{{ latest_passwd }}"
+        transport: rest
+        #ssh_keyfile: "../../.ssh/id_rsa.pub"
+        validate_certs: no
+      validate_certs: no
+    delegate_to: localhost
+
+  - name: Fetch above UCS
+    fetch:
+      src: /var/local/ucs/src.ucs
+      dest: "../../qkview_ucs/"
+    delegate_to: remote
+
+#  - name: Get qkview
+#    bigip_qkview:
+#      asm_request_log: no
+#      complete-information: yes
+#      dest: ../../qkview_ucs/
+#      exclude_core: no
+#      filename: "{{ ansible_host }}"
+#      force: yes
+#      provider:
+#        server: "{{ ansible_host }}"
+#        user: "{{ username }}"
+#        password: "{{ lastest_passwd }}"
+#      validate_certs: no
+#    delegate_to: localhost
+#

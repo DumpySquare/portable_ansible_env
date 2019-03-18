@@ -1,0 +1,16 @@
+---
+
+- name: Configure the admin password
+  uri:
+    url: "https://{{ ansible_host }}/mgmt/shared/authz/users/admin"
+    method: PATCH
+    body: '{"oldPassword":"{{ default_apass }}","password":"{{ latest_passwd }}"}'
+    body_format: json
+    validate_certs: no
+    force_basic_auth: yes
+    user: "{{ username }}"
+    password: "{{ default_apass }}"
+    headers:
+      Content-Type: "application/json"
+  ignore_errors: yes  # so we can continue
+  delegate_to: localhost

@@ -1,0 +1,14 @@
+---
+
+- name: Update root password
+  bigip_user:
+    full_name: root
+    username_credential: root
+    password_credential: "{{ latest_passwd }}"
+    update_password: always
+    provider:
+      server: "{{ ansible_host }}"
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+    validate_certs: no
+  delegate_to: localhost

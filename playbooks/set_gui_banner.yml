@@ -1,0 +1,30 @@
+---
+
+- name: Set GUI Banner Color
+  bigip_sys_db:
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    server: "{{ansible_host}}"
+    key: ui.advisory.color
+    value: "{{gui_banner_color}}"
+    validate_certs: no
+
+- name: Set GUI Banner text
+  bigip_sys_db:
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    server: "{{ansible_host}}"
+    key: ui.advisory.text
+    value: "{{hostname}}"
+    validate_certs: no
+
+- name: Enable GUI Banner
+  bigip_sys_db:
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    server: "{{ansible_host}}"
+    key: ui.advisory.enabled
+    value: "true"
+    validate_certs: no
+
+

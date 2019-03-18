@@ -1,0 +1,168 @@
+---
+
+
+#  add logic, if hostname variable does not exist - get hostname
+
+#- name: Get device hostname
+#  uri:
+#    url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+#    method: POST
+#    body: 
+#      command: run
+#      utilCmdArgs: "-c 'echo $HOSTNAME'"
+#    body_format: json
+#    validate_certs: no
+#    force_basic_auth: yes
+#    user: "{{ username }}"
+#    password: "{{ latest_passwd }}"
+#    headers:
+#      Content-Type: "application/json"
+#  delegate_to: localhost
+#  register: hostname_result  
+#  # todo: research ansible fact = f5 hostname
+#
+#- name: Extract hostname form json_result and remove trailing line return
+#  set_fact: 
+#    hostname: "{{hostname_result.json.commandResult  | replace('\n', '')}}"
+
+- name: Get current device cert subj
+  uri:
+    url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+    method: POST
+    body: '{"command":"run", "utilCmdArgs": "-c ''openssl x509 -noout -subject -in {{fullcert}}''"}'
+    body_format: json
+    validate_certs: no
+    force_basic_auth: yes
+    user: "{{ username }}"
+    password: "{{ latest_passwd }}"
+    headers:
+      Content-Type: "application/json"
+  delegate_to: localhost
+  register: original_cert_subject
+
+#  - name: Check info before proceed
+#    debug:  # lets check some stuff before we continue...
+#      msg:
+#        - "   Hostname:     {{hostname}}"
+#        - "   Current cert subj:     {{current_cert_subject.json.commandResult}}"
+#  - pause: prompt="Continue cert regen?"
+#    #when: current_cert_subject.json.commandResult is search("localhost.localdomain")
+
+
+# note:  Had to finish setting previous fact before I can use it in the next fact setting, so distint tasks
+#  - Escping a literal "&" is proving to be difficult - leaving out for now
+- name:  Set cert subj information
+  when: '"localhost.localdomain" in original_cert_subject.json.commandResult'
+  block:
+  
+  - name: Using hostname to set CN
+    set_fact:
+      cert_sub: "'\
+        /C={{C}}\
+        /O={{O}}\
+        /OU={{OU}}\
+        /CN={{hostname}}'"
+
+       
+  - name: backup old cert/key
+    uri: 
+      url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+      method: POST
+      body: 
+        command: run
+        utilCmdArgs: "-c 'cp {{fullcert}} {{fullcert}}.old && cp {{fullkey}} {{fullkey}}.old'"
+      body_format: json
+      validate_certs: no
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      headers:
+        Content-Type: "application/json"
+    #register: cert_key_backup
+    delegate_to: localhost
+
+  - name: Regen device cert
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+      method: POST
+      body: 
+        command: run
+        utilCmdArgs: "-c 'openssl req -x509 -nodes \
+          -days {{days}} \
+          -newkey {{keysize}} \
+          -subj {{cert_sub}} \
+          -keyout {{fullkey}} \
+          -out {{fullcert}}'"
+      body_format: json
+      validate_certs: no
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      headers:
+        Content-Type: "application/json"
+    delegate_to: localhost
+
+  - name: Add cert to trusted cert stores
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+      method: POST
+      body: 
+        command: run
+        utilCmdArgs: "-c 'cat {{fullcert}} >> /config/big3d/client.crt && cat {{fullcert}} >> /config/gtm/server.crt'"
+      body_format: json
+      validate_certs: no
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      headers:
+        Content-Type: "application/json"
+    #register: cert_key_backup
+    delegate_to: localhost
+      
+  # this should execute and cause a disconnect/fail, but should still have succeeded
+  - name: restart httpd
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+      method: POST
+      body: 
+        command: run
+        utilCmdArgs: "-c 'tmsh restart sys service httpd'"
+      body_format: json
+      validate_certs: no
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      headers:
+        Content-Type: "application/json"
+    ignore_errors: yes  # so we can continue
+    delegate_to: localhost
+
+  
+  - name: wait for 3 seconds to make sure httpd started
+    wait_for: timeout=3
+
+  - name: Recheck current device cert
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
+      method: POST
+      body: '{"command":"run", "utilCmdArgs": "-c ''openssl x509 -noout -subject -in {{fullcert}}''"}'
+      body_format: json
+      validate_certs: no
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      headers:
+        Content-Type: "application/json"
+    register: new_cert_subject
+    delegate_to: localhost
+
+
+- name: Certificate Updated
+  debug: msg="New Device cert subj {{new_cert_subject.json.commandResult}}"
+  when: new_cert_subject is defined
+
+- name: Display current cert subj
+  debug: msg="Keeping original device cert subj of {{original_cert_subject.json.commandResult}}"
+  when: new_cert_subject is not defined
+
+

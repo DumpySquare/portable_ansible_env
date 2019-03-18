@@ -1,0 +1,113 @@
+---
+#  I was trying to configure cookie refresh, but I think I'm hitting some problems with the bigiq using RADIUS admin auth
+#  - currently sticking with admin auth token for the duration of the import_playbook
+#  - will revisit down the road
+
+
+#- hosts: "{{host}}"
+#  connection: local
+#  vars:
+#
+#  gather_facts: yes
+#  tasks:
+
+
+- name: set token expire value
+  set_fact: 
+    expires_in: "{{token_exp|int - ansible_date_time.epoch|int}}"
+    refresh_expires_in: "{{refresh_token_exp|int - ansible_date_time.epoch|int}}"
+    username: "{{username}}"
+    latest_passwd: "{{latest_passwd}}"
+    #provider: "{{bigiq_logon_provider}}"
+
+- name: read inv file token info
+  debug:
+    msg:
+      - "   User/date/time:           {{username}} - {{ansible_date_time.iso8601}}"
+      - "   Current epoc time:        {{ansible_date_time.epoch|int}}"
+      - "   Token exp:                {{token_exp|int}}"
+      - "   Expires in...             {{expires_in}}"
+      - "   Refresh expires in ...    {{refresh_expires_in}}"
+
+
+#  - name: if able, refresh token, write to inventory
+#    block:
+#      - uri:
+#          url: "https://{{ ansible_host }}/mgmt/shared/authn/exchange"
+#          method: POST
+#          body_format: json
+#          return_content: true
+#          validate_certs: false
+#          body: 
+#            refreshToken:
+#              token: "{{refresh_token}}"
+#              #userName: "{{ username }}"
+#              #authProviderName: "{{provider}}"
+#          status_code: 200
+#        register: bigiq_auth_token
+#        #delegate_to: localhost
+#
+#      - blockinfile:
+#          path: "{{inventory_file}}"  # magic ansible variable
+#          marker: "#--- {mark} {{username}} bigiq auth token ---"
+#          insertafter: "### bigiq auth token ###"
+#          content: |
+#            #[bigiq_auth_token:vars]
+#            #User/date/time  {{username}} - {{ansible_date_time.iso8601}}
+#            token="{{bigiq_auth_token.json.token.token}}"
+#            token_timeout="{{bigiq_auth_token.json.token.timeout}}"
+#            token_exp="{{bigiq_auth_token.json.token.exp}}"
+#            refresh_token="{{bigiq_auth_token.json.refreshToken.token}}"
+#            refresh_token_timeout="{{bigiq_auth_token.json.refreshToken.timeout}}"
+#            refresh_token_exp="{{bigiq_auth_token.json.refreshToken.exp}}"
+#
+#      - debug:
+#          msg:
+#            - "*** Token refreshed ***"
+#        
+#    when: expires_in|int <= 260 and refresh_expires_in|int >= 60
+
+
+- name: get new token if expired, can't renew, write to inventory
+  block:
+    - uri:
+        url: "https://{{ ansible_host }}/mgmt/shared/authn/login"
+        method: POST
+        body_format: json
+        return_content: true
+        validate_certs: false
+        # logingProviderName: should typically be tmos
+        body: 
+          username: "{{username}}"
+          password: "{{latest_passwd}}"
+          #logonProviderName: "{{provider}}"
+        status_code: 200
+      register: bigiq_auth_token
+      #delegate_to: localhost
+
+    - blockinfile:
+        path: "{{inventory_file}}"  # magic ansible variable
+        marker: "#--- {mark} {{username}} bigiq auth token ---"
+        insertafter: "### bigiq auth token ###"
+        content: |
+          #[bigiq_auth_token:vars]
+          #User/date/time  {{username}} - {{ansible_date_time.iso8601}}
+          token="{{bigiq_auth_token.json.token.token}}"
+          token_timeout="{{bigiq_auth_token.json.token.timeout}}"
+          token_exp="{{bigiq_auth_token.json.token.exp}}"
+          refresh_token="{{bigiq_auth_token.json.refreshToken.token}}"
+          refresh_token_timeout="{{bigiq_auth_token.json.refreshToken.timeout}}"
+          refresh_token_exp="{{bigiq_auth_token.json.refreshToken.exp}}"
+
+    - debug:
+        msg:
+          - "*** New Token ***"
+      
+  when: expires_in|int <= 60 #and refresh_expires_in|int <= 60
+
+
+
+
+
+
+

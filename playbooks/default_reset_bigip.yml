@@ -1,0 +1,15 @@
+---
+
+- hosts: "{{ host }}"
+  connection: local
+  tasks:
+
+  - name: Reset the BIG-IP to factory default
+    bigip_config:
+      user: "{{username}}"
+      password: "{{latest_passwd}}"
+      server: "{{ ansible_host }}"
+      reset: True
+      save: True
+      validate_certs: no
+    delegate_to: localhost

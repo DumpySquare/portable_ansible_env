@@ -1,0 +1,31 @@
+---
+
+- name: Set snmp location
+  bigip_snmp:
+    location: "{{hostname}}"
+    server: "{{ansible_host}}"
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    validate_certs: no
+    transport: rest
+  when: hostname is defined
+
+- name: Combine some snmp vars to facts
+  # building strings for readability
+  set_fact: 
+    snmpcomms: "{ i{{snmprw}}_1 { access rw community-name {{snmprw}} } i{{snmpro}}_1 { community-name {{snmpro}} } }"
+    snmptrapdest1: "trapdest1 { community {{trapcomm}} host {{trapd1}} version 1}"
+    snmptrapdest2: "trapdest2 { community {{trapcomm}} host {{trapd2}} version 1}"
+
+
+    # rebuild snmp details as dictionary for scope flexibility
+- name: Overwrite with latest snmp strings
+  bigip_command:
+    commands:
+      - modify sys snmp communities replace-all-with {{snmpcomms}}
+      - modify sys snmp allowed-addresses replace-all-with { {{snmpaccess}} }
+      - modify sys snmp traps replace-all-with { {{snmptrapdest1}} {{snmptrapdest2}} }
+    server: "{{ansible_host}}"
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    validate_certs: no

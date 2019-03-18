@@ -1,0 +1,40 @@
+---
+
+  # default admin route is typically set, so use it for all other admin routes
+- name: Get default admin route
+  uri:
+    url: "https://{{ ansible_host }}/mgmt/tm/sys/management-route/default"
+    user: "{{ username }}"
+    password: "{{ latest_passwd }}"
+    force_basic_auth: yes
+    method: GET
+    return_content: yes
+    status_code: 200
+    validate_certs: no
+    headers:
+      Content-Type: "application/json"
+      body_format: json
+  delegate_to: localhost
+  register: default_route
+
+- name: Extract default admin route destination
+  set_fact:
+    admin_dg: "{{ default_route.json.gateway }}"
+
+
+- name: set admin routes
+  bigip_management_route:
+    name:  "{{item.key}}"
+    gateway: "{{admin_dg}}"
+    network: "{{item.value}}"
+    state: present
+    provider:
+      user: "{{username}}"
+      password: "{{latest_passwd}}"
+      server: "{{ansible_host}}"
+    validate_certs: no
+  delegate_to: localhost
+  loop: "{{ lookup('dict', admin_routes) }}"
+
+
+    

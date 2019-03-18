@@ -1,0 +1,19 @@
+---
+
+- hosts: "{{ host }}"
+  connection: local
+  tasks:
+
+    - name: Set NTP servers/timezone
+      bigip_device_ntp:
+        user: "{{ username }}"
+        password: "{{ latest_passwd }}"
+        server: "{{ ansible_host }}"
+        ntp_servers:
+          - "{{ ntp1 }}"
+          - "{{ ntp2 }}"
+          - "{{ ntp3 }}"
+        timezone: "{{ timezone }}"
+        validate_certs: no
+      delegate_to: localhost
+      #when: ntpl is defined
