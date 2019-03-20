@@ -20,7 +20,7 @@
       password: "{{ latest_passwd }}"
       headers:
         Content-Type: "application/json"
-    register: json_result
+    register: hostname_result
       
   - name: Extract hostname form json_result and remove trailing line return
     set_fact: 
@@ -71,7 +71,7 @@
       method: POST
       body: 
         command: run
-        utilCmdArgs: "-c 'mv -f {{fullcert}}.old {{fullcert}} && mv -f {{fullkey}}.old {{fullkey}}'"
+        utilCmdArgs: "-c 'mv -f {{cert.fullcert}}.old {{cert.fullcert}} && mv -f {{cert.fullkey}}.old {{cert.fullkey}}'"
       body_format: json
       validate_certs: no
       force_basic_auth: yes

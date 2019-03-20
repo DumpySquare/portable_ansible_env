@@ -13,9 +13,9 @@
 - name: Combine some snmp vars to facts
   # building strings for readability
   set_fact: 
-    snmpcomms: "{ i{{snmprw}}_1 { access rw community-name {{snmprw}} } i{{snmpro}}_1 { community-name {{snmpro}} } }"
-    snmptrapdest1: "trapdest1 { community {{trapcomm}} host {{trapd1}} version 1}"
-    snmptrapdest2: "trapdest2 { community {{trapcomm}} host {{trapd2}} version 1}"
+    snmpcomms: "{ i{{snmp.rw}}_1 { access rw community-name {{snmp.rw}} } i{{snmp.ro}}_1 { community-name {{snmp.ro}} } }"
+    snmptrapdest1: "trapdest1 { community {{snmp.trapcomm}} host {{snmp.trapd1}} version 1}"
+    snmptrapdest2: "trapdest2 { community {{snmp.trapcomm}} host {{snmp.trapd2}} version 1}"
 
 
     # rebuild snmp details as dictionary for scope flexibility
@@ -23,9 +23,11 @@
   bigip_command:
     commands:
       - modify sys snmp communities replace-all-with {{snmpcomms}}
-      - modify sys snmp allowed-addresses replace-all-with { {{snmpaccess}} }
+      - modify sys snmp allowed-addresses replace-all-with { {{snmp.access}} }
       - modify sys snmp traps replace-all-with { {{snmptrapdest1}} {{snmptrapdest2}} }
     server: "{{ansible_host}}"
     user: "{{username}}"
     password: "{{latest_passwd}}"
     validate_certs: no
+
+#  update play to use https://docs.ansible.com/ansible/latest/modules/bigip_snmp_community_module.html

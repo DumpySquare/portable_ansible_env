@@ -45,32 +45,40 @@
       #hostname: "{{hostname_result.json.commandResult.split(\".\")[0]}}"
       hostname: "{{hostname_result.json.commandResult  | replace('\n', '')}}"
 
-  - include_tasks: set_root_pass.yml
-  - include_tasks: gui_setup_disable.yml
+  - name: Update root password
+    include_tasks: set_root_pass.yml
 
-  - include_tasks: regen_device_cert.yml
+  - name: Disable gui setup wizard
+    include_tasks: gui_setup_disable.yml
+
+  - name: Regenerate Device Certificate
+    include_tasks: regen_device_cert.yml
       # uses hostname var
-  
- 
+   
   - name:  set admin routes
     include_tasks: set_admin_routes.yml
     when: admin_routes is defined
 
-  - include_tasks: set_gui_banner.yml
+  - name: Set GUI banner information
+    include_tasks: set_gui_banner.yml
     when: gui_banner_color is defined
 
-  - include_tasks: set_snmp.yml
+  - name: Set SNMP details
+    include_tasks: set_snmp.yml
 
-  - include_tasks: set_syslog.yml
+  - name: Set syslog destination
+    include_tasks: "{{syslog_play}}"
+    when: syslog_play is defined
+    # this var points to a customer specific syslog play
 
-  #- include_tasks: set_radiussysauth.yml
+  - include_tasks: set_radius_sys_auth.yml
   #- include_tasks: set_default_node_monitor.yml
   #- include_tasks: set_gui_login_banner.yml
   #- include_tasks: set_ssh_login_banner.yml
   #- include_tasks: set_ssh_activity_timeout.yml
 
-  - include_tasks: dns.yml
-  - include_tasks: ntp.yml
+  #- include_tasks: dns.yml
+  #- include_tasks: ntp.yml
 
   #- include: no_update_phone_home.yml
   #- include: set_preferences.yml

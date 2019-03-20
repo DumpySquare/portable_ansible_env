@@ -29,7 +29,7 @@
   uri:
     url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
     method: POST
-    body: '{"command":"run", "utilCmdArgs": "-c ''openssl x509 -noout -subject -in {{fullcert}}''"}'
+    body: '{"command":"run", "utilCmdArgs": "-c ''openssl x509 -noout -subject -in {{cert.fullcert}}''"}'
     body_format: json
     validate_certs: no
     force_basic_auth: yes
@@ -58,9 +58,9 @@
   - name: Using hostname to set CN
     set_fact:
       cert_sub: "'\
-        /C={{C}}\
-        /O={{O}}\
-        /OU={{OU}}\
+        /C={{cert.C}}\
+        /O={{cert.O}}\
+        /OU={{cert.OU}}\
         /CN={{hostname}}'"
 
        
@@ -70,7 +70,7 @@
       method: POST
       body: 
         command: run
-        utilCmdArgs: "-c 'cp {{fullcert}} {{fullcert}}.old && cp {{fullkey}} {{fullkey}}.old'"
+        utilCmdArgs: "-c 'cp {{cert.fullcert}} {{cert.fullcert}}.old && cp {{cert.fullkey}} {{cert.fullkey}}.old'"
       body_format: json
       validate_certs: no
       force_basic_auth: yes
@@ -88,11 +88,11 @@
       body: 
         command: run
         utilCmdArgs: "-c 'openssl req -x509 -nodes \
-          -days {{days}} \
-          -newkey {{keysize}} \
+          -days {{cert.days}} \
+          -newkey {{cert.keysize}} \
           -subj {{cert_sub}} \
-          -keyout {{fullkey}} \
-          -out {{fullcert}}'"
+          -keyout {{cert.fullkey}} \
+          -out {{cert.fullcert}}'"
       body_format: json
       validate_certs: no
       force_basic_auth: yes
@@ -108,7 +108,7 @@
       method: POST
       body: 
         command: run
-        utilCmdArgs: "-c 'cat {{fullcert}} >> /config/big3d/client.crt && cat {{fullcert}} >> /config/gtm/server.crt'"
+        utilCmdArgs: "-c 'cat {{cert.fullcert}} >> /config/big3d/client.crt && cat {{cert.fullcert}} >> /config/gtm/server.crt'"
       body_format: json
       validate_certs: no
       force_basic_auth: yes
@@ -145,7 +145,7 @@
     uri:
       url: "https://{{ ansible_host }}/mgmt/tm/util/bash"
       method: POST
-      body: '{"command":"run", "utilCmdArgs": "-c ''openssl x509 -noout -subject -in {{fullcert}}''"}'
+      body: '{"command":"run", "utilCmdArgs": "-c ''openssl x509 -noout -subject -in {{cert.fullcert}}''"}'
       body_format: json
       validate_certs: no
       force_basic_auth: yes
@@ -156,13 +156,15 @@
     register: new_cert_subject
     delegate_to: localhost
 
+  - name: Show updated certificate
+    debug: msg="New Device cert subj {{new_cert_subject.json.commandResult}}"
+    #end of block...
 
-- name: Certificate Updated
-  debug: msg="New Device cert subj {{new_cert_subject.json.commandResult}}"
-  when: new_cert_subject is defined
 
-- name: Display current cert subj
+
+#outside block
+- name: Cert update skipped...
   debug: msg="Keeping original device cert subj of {{original_cert_subject.json.commandResult}}"
-  when: new_cert_subject is not defined
+  when: new_cert_subject is skipped
 
 

@@ -1,0 +1,56 @@
+---
+
+# just for testing
+#- name: set temp fact
+#  set_fact: hostname="rdc"
+
+- name: If in dc1, set syslog dest to dc1-syslog
+  when: '"dc1" in hostname'
+  bigip_remote_syslog:
+    #name: syslog.dc1.key   # coming in ansible v2.8...
+    remote_host: "{{syslog.dc1}}"
+    provider:
+      server: "{{ansible_host}}"
+      user: "{{username}}"
+      pasword: "{{latest_passwd}}"
+      transport: rest
+      validate_certs: no
+  delegate_to: localhost
+  register: dc1_syslog_set
+
+- name: If in dc2, set syslog dest to dc2-syslog
+  when: '"dc2" in hostname'
+  bigip_remote_syslog:
+    #name: "{{syslog.dc2.key}}"
+    remote_host: "{{syslog.dc2}}"
+    provider:
+      server: "{{ansible_host}}"
+      user: "{{username}}"
+      pasword: "{{latest_passwd}}"
+      transport: rest
+      validate_certs: no
+  delegate_to: localhost
+  register: dc2_syslog_set
+
+- name: Default, set syslog dest to dc-dr
+  when:
+    - dc1_syslog_set is skipped
+    - dc2_syslog_set is skipped
+  bigip_remote_syslog:
+    #name: "{{syslog.dr.key}}"
+    remote_host: "{{syslog.dr}}"
+    provider:
+      server: "{{ansible_host}}"
+      user: "{{username}}"
+      pasword: "{{latest_passwd}}"
+      transport: rest
+      validate_certs: no
+  delegate_to: localhost
+
+#  learned something interesting here:
+#  I thought the register for each dc conditional would only exist if the conditional executed
+#  But, it actually registers that it was skipped
+#  So, before, I as just checking for the abense of those registers to catch the fallback/default task
+#  But I actaully had to check that both the previous tasks were skipped
+
+# also, the list on the last when statement has an implicit "AND"
