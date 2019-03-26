@@ -1,17 +1,12 @@
 ---
 
-- hosts: "{{ host }}"
-  connection: local
-  tasks:
 
-    - name: Set local DNS settings
-      bigip_device_dns:
-        user: "{{ username }}"
-        password: "{{ latest_passwd }}"
-        server: "{{ ansible_host }}"
-        name_servers:
-            - "{{ dns1 }}"
-            - "{{ dns2 }}"
-            - "{{ dns3 }}"
-        validate_certs: no
+- name: Set local DNS settings
+  bigip_device_dns:
+    user: "{{ username }}"
+    password: "{{ latest_passwd }}"
+    server: "{{ ansible_host }}"
+    name_servers: "{{ dnsl }}"
+    validate_certs: no
+  #with_items: "{{ "
 

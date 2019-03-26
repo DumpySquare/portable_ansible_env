@@ -6,7 +6,7 @@
     password: "{{latest_passwd}}"
     server: "{{ansible_host}}"
     key: ui.advisory.color
-    value: "{{gui_banner_color}}"
+    value: "{{gui_advisory.color}}"
     validate_certs: no
 
 - name: Set GUI Banner text

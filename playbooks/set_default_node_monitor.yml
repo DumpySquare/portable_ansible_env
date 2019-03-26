@@ -1,0 +1,11 @@
+---
+
+- name: Set default node monitor to icmp
+  bigip_command:
+    commands:
+      - tmsh modify ltm default-node-monitor { rule icmp }
+    server: "{{ansible_host}}"
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    validate_certs: no
+

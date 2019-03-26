@@ -1,0 +1,11 @@
+---
+
+- name: Set ssh login banner
+  bigip_command:
+    commands:
+      - modify sys sshd { banner enabled banner-text {{loginbanner}} }
+    server: "{{ansible_host}}"
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    validate_certs: no
+

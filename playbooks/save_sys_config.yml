@@ -1,0 +1,10 @@
+---
+
+- name: Save sys config
+  bigip_config:
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    server: "{{ ansible_host }}"
+    save: True
+    validate_certs: no
+  delegate_to: localhost

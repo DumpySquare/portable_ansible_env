@@ -1,0 +1,11 @@
+---
+
+- name: Set ssh timeout
+  bigip_command:
+    commands:
+      - modify sys sshd { inactivity-timeout 1200 }
+    server: "{{ansible_host}}"
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    validate_certs: no
+

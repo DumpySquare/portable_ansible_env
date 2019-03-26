@@ -1,0 +1,12 @@
+---
+
+- name: Set preferences
+  bigip_command:
+    commands:
+      - modify sys db ui.system.preferences.advancedselection value advanced
+      - modify sys db ui.system.preferences.recordsperscreen value 1000
+    server: "{{ansible_host}}"
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    validate_certs: no
+

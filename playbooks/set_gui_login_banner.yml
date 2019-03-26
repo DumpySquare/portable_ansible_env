@@ -1,0 +1,14 @@
+---
+
+- name: Set gui login banner
+  bigip_command:
+    commands:
+      - modify sys global-settings { gui-security-banner-text {{loginbanner}} }
+    server: "{{ansible_host}}"
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    validate_certs: no
+
+
+# todo:  update to use api in idempotent way
+

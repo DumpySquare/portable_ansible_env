@@ -1,0 +1,15 @@
+---
+
+- name: Set RADIUS Admin Auth via tmsh commands
+  bigip_command:
+    commands:
+      - create auth radius-server radius1 { secret {{radius.secret}} server {{radius.dest1}} }
+      - create auth radius-server radius2 { secret {{radius.secret}} server {{radius.dest2}} }
+      - create auth radius system-auth servers replace-all-with { radius1 radius2 }
+      - modify auth source { type radius }
+    server: "{{ansible_host}}"
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    validate_certs: no
+
+

@@ -1,0 +1,11 @@
+---
+
+- name: No Update, no phone home
+  bigip_command:
+    commands:
+      - modify sys software update auto-check disabled auto-phonehome disabled
+    server: "{{ansible_host}}"
+    user: "{{username}}"
+    password: "{{latest_passwd}}"
+    validate_certs: no
+
