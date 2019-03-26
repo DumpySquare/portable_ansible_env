@@ -1,12 +1,32 @@
 ---
 
-- name: Set preferences
-  bigip_command:
-    commands:
-      - modify sys db ui.system.preferences.advancedselection value advanced
-      - modify sys db ui.system.preferences.recordsperscreen value 1000
-    server: "{{ansible_host}}"
-    user: "{{username}}"
-    password: "{{latest_passwd}}"
-    validate_certs: no
+- name: Set gui show advanced section
+  bigip_sys_db:
+    key: "ui.system.preferences.advancedselection"
+    value: "advanced"
+    provider: 
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      server: "{{ ansible_host }}"
+      validate_certs: no
+  
+- name: Set gui records per screen
+  bigip_sys_db:
+    key: ui.system.preferences.recordsperscreen
+    value: 1000
+    provider: 
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+      server: "{{ ansible_host }}"
+      validate_certs: no
 
+  
+  
+#  bigip_command:
+#    commands:
+#      - modify sys db ui.system.preferences.advancedselection value advanced
+#      - modify sys db ui.system.preferences.recordsperscreen value 1000
+#    server: "{{ansible_host}}"
+#    user: "{{username}}"
+#    password: "{{latest_passwd}}"
+#    validate_certs: no

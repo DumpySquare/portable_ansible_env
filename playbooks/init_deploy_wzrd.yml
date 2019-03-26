@@ -11,6 +11,15 @@
 - hosts: "{{ host }}"
   connection: local
   gather_facts: no
+  environment:
+    F5_VALIDATE_CERTS: false
+
+#  vars:
+#    provider:
+#      user: "{{ username }}"
+#      password: "{{ latest_passwd }}"
+#      server: "{{ ansible_host }}"
+  
   tasks:
   
 #  - name: Initial config wizard plays
@@ -66,10 +75,15 @@
   - name: Set SNMP details
     include_tasks: set_snmp.yml
 
-  - name: Set syslog destination
+  - name: Set syslog destination using custom play
     include_tasks: "{{syslog_play}}"
     when: syslog_play is defined
     # this var points to a customer specific syslog play
+    # that sets syslog destination depending on datacenter
+
+  - name: Set syslog normally
+    include_tasks: set_syslog.yml
+    when: syslog is defined
 
   - name: Set RADIUS admin auth
     include_tasks: set_radius_sys_auth.yml
@@ -87,10 +101,12 @@
     include_tasks: set_ssh_timeout.yml
 
   - name:  Set DNS
-    include_tasks: dns.yml
+    include_tasks: set_dns.yml
+    when: dnsl is defined
 
   - name: Set NTP
-    include_tasks: ntp.yml
+    include_tasks: set_ntp.yml
+    when: ntpl is defined
 
   - name:  No Update, no phone home
     include: no_update_no_phone_home.yml
@@ -100,7 +116,7 @@
 
   - name: Create users
     include_tasks: create_users.yml
-    when: user1 is defined  
+    when: users is defined  
 
   - name: Save config
     include_tasks: save_sys_config.yml

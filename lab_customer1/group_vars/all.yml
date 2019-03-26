@@ -1,0 +1,107 @@
+# lab vars file
+
+default_apass: "admin"
+default_rpass: "default"
+username: "admin"
+
+bigiq_logon_provider: "acs-radius-admin-auth"
+# logingProviderName: should typically be tmos
+provider: "tmos"
+
+latest_passwd: "benrocks"      
+#debug=True
+
+
+old_passl:
+    - default
+    - benrocks
+    - f5rocks
+
+start_screen:
+    ltm: "virtual_server"
+    gtm: "wide_ip"
+    vpr: "performance"
+
+# lists are easier for now
+ntp:
+    timezone: "US/Central"
+ntpl: ['10.0.0.1', '10.0.0.2', '10.0.0.3']
+
+dnsl: ['10.20.0.1', '10.20.0.2', '10.20.0.3']
+
+## syslog destinations
+#syslog:
+#    splunk01: "10.10.10.10"
+#
+## set special syslog play
+#syslog_play: "../lab_customer1/special_syslog.yml"
+
+
+# snmp details
+#  snmp strings as of feb. 1019
+snmp:
+    ro: "onlyreading"
+    rw: "readingandwriting"
+    access: "127.0.0.0/8 10.10.20.0/255.255.255.0"
+    trapcomm: "dubious"
+    trapd1: "10.20.50.9"
+    trapd2: "10.40.50.9"
+
+# radius admin auth\
+radius:
+    secret: "squarepants"
+    dest1: "10.20.50.20"
+    dest2: "10.40.50.20"
+
+# default node monitor
+default_node_monitor: "icmp"
+
+# device cert details
+cert:
+    days: "3650"    # 10 years
+    C: "US"      # Country
+    ST: "WA"   # State
+    L: "Seattle"   # City/Locality
+    O: "F5"     # Organization
+    OU: "IT"   # Division    -no "&" for now
+    keysize: "rsa:2048"
+    keyname: "server.key"
+    certname: "server.crt"   # default for now
+    guicertlocation: "/config/httpd/conf/ssl.crt/"
+    guikeylocation: "/config/httpd/conf/ssl.key/"
+    fullcert :  "/config/httpd/conf/ssl.crt/server.crt"
+    fullkey :  "/config/httpd/conf/ssl.key/server.key"
+    liclocation: "/config/bigip.license"
+    #default_cert_subj: "/C=--/ST=WA/L=Seattle/O=MyCompany/OU=MyOrg/CN=localhost.localdomain/mailAddress=root@localhost.localdomain"
+
+# admin routes as a dictionary
+#   allows calling the name:key values to name each route
+admin_routes:
+    route1: '10.241.0.0/16'
+    route2: '10.242.32.0/24'
+    route3: '10.243.0.0/24'
+    
+rsa_pub_id: "need to update..."
+
+gui_advisory:
+    color: green
+
+#users:
+#    - [username: 'user1', role: 'all:admin', shell: 'bash']
+#    - [username: 'audit_user', role: 'all:admin', shell: 'tmsh']
+
+
+users:
+    user1:
+        role: "all:admin"
+        shell: bash
+    user2:
+        role: "all:admin"
+        shell: tmsh
+
+loginbanner: |
+        "W A R N I N G - Restricted to Authorized Users Only - Unauthorized Access of This Device is Strictly Forbidden
+        
+        By proceeding further I accept the following:
+        
+        You are about to access a system of stuff.  It can and will be dangerous for cute cuddly creatures.  Puppies may die..."

@@ -1,10 +1,10 @@
 ---
 
-- name: Create user account
+- name: Create user accounts
   bigip_user:
-    username_credential: "{{user1.username}}"
-    partition_access: "{{user1.role}}"
-    shell: "{{user1.shell}}"
+    username_credential: "{{item.key}}"
+    partition_access: "{{item.value.role}}"
+    shell: "{{item.value.shell}}"
     state: present
     provider:
       server: "{{ansible_host}}"
@@ -12,4 +12,5 @@
       password: "{{latest_passwd}}"
       validate_certs: no
   delegate_to: localhost
+  with_dict: "{{users}}"
     
