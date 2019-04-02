@@ -1,24 +1,20 @@
 ---
-# Ansible playbook to import F5 BIG-IQ device inventory to Ansible INI inventory
+# Ansible playbook to call bigiq api for managed bigip ucs capture
 
-# fetches bigiq auth token, calls device list via api, 
-# Adds bigiq devices with hostname,mgmt-ip, uuid and some header info
-# to end of current inventory defined to run play
+# fetches bigiq auth token, then loops over bigip list to capture bigip ucs from bigiq
 #   Ben Gordon (b.gordon@f5.com)
-
-# header information includes date/time and source hostname/IP
 
 - hosts: "bigiq01"
   connection: local
   gather_facts: no
   vars:
-    bigips: 
+    bigips: # must be in inventory
       - bigip31.f5.com
       - bigip32.f5.com
     # prefix to the ucs name the system uses, <prefix>hostname_<date>
     # example:  "preupgrade_bigip31.f5.com_20190328193122.ucs"
     prefix: "pre-upgrade_"  # ucs prefix
-    life: 1   # number of days bigiq will keep the ucs
+    life: 14   # number of days bigiq will keep the ucs
     desc: "Executed via Ansible"
   tasks:
 
@@ -48,33 +44,35 @@
         Content-Type: "application/json"
       body_format: json
       body:
-        devicesReference: 
-          link: https://localhost/mgmt/shared/resolver/device-groups/cm-bigip-allBigIpDevices/devices?$filter=hostname+eq+'{{ item }}'
-        taskReference:
-          link: https://localhost/mgmt/cm/system/backup-restore
-        taskBody:
+        devicesReference:   # tells bigiq what hosts to do it to
+          link: https://localhost/mgmt/shared/resolver/device-groups/cm-bigip-allBigIpDevices/devices?$filter=hostname+eq+'{{ item }}'    
+        taskReference:  # tells bigiq what to do
+          link: https://localhost/mgmt/cm/system/backup-restore   
+        taskBody:   # details on what bigiq needs to do
           namePrefix: "{{ prefix }}"
           includePrivateKeys: true
           isEncrypted: false
-          backupLifeTime: 1
+          backupLifeTime: "{{ life }}"
           shouldCreateArchive: false
           passphrase: null
           obfuscatedPassphrase: null
           backupCounter: null
           description: "{{ desc }}"
     register: json_response
-    with_items: "{{ bigips }}"
+    with_items: "{{ bigips }}"  # looks through bigip list defined at top
 
-  - name: Display json_response register
-    debug: msg="{{json_response.results}}"
-    #debug: msg="{% for item in json_response['results']['item'] %}{% endfor %}"
-      
-    #when: '"items" not in json_response.json'
+#  - name: Display json_response register
+#    debug: msg="{{json_response}}"
 
-#  - name: Display single ucs information
-#    debug: msg="ucs id {{original_cert_subject.json.id}}"
-#    when: '"items" not in json_response.json'
+
+
+
+##########################################################################################
+#Future considerations: Looking for some way to check the status and/or identity of the ucs's that were created, by gathering details from the original api response.  Explanation...  In a small test environment, the ucs are executed and downloaded to bigip quickly, then they are easy to find/confirm by listing the ucs on the bigiq.  But, these details easily get losted in production environments with 200+ devices, especailly with daily backups and other engineers actively using the system.  Listing the ucs on the bigiq will easily result in 100's of entries.
 #
-#  - name: Display multiple ucs information
-#    debug: msg="ucs id {{original_cert_subject.json.id}}"
-#    when: '"items" in json_response.json'
+#A thought was to register the output of each ucs creation execution, then pull out the details as needed, but, it seems this results in "un-itemized" json objects in the register.  This means that one cannot loop through the "items" list and pull out what is needed.  It is just two consecutive json responses, like a list, but I don't know of a way to call each item in the list.  I may be able to jinja filters to either filter incoming register information or outgoing, and/or general search/extract methods, like  https://bbhoss.io/ansible-filters-with-items/
+#
+#So, I thought about registering facts from each register play execution, but that requires a separate task that needs to run after each execution of the previous call to extract the necessary facts to a different register before it is re-written to by the next execution of the same task.  That would require looping over a block of multiple tasks, which is currently not supported.  https://github.com/ansible/ansible/issues/13262  The recommendation is to loop over "includes", which requires that the api call and fact extraction be isolated to their own child plays and called via the parent play.  I didn't want to break it up that much and I'm not sure how register contexts work between the different plays.  I keep thinking this works like python functions where variables need to be passed in and out of functions, but I think facts registered via any parent/child play are available for general use at any level later in the parent/child execution.  So, looping over includes may be the solution in the future.
+#
+#It is still open on exactly how this play will be consumed and integrated into solutions like "upgrade" plays.  For now, the core execution is sufficient (that a ucs was created), and I will explore providing good ways to list and filter completed ucs files on the bigiq till we need more details about each api execution past a status code 202
+##########################################################################################
