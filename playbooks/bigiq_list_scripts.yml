@@ -1,0 +1,63 @@
+---
+# Ansible playbook to call bigiq api for script list
+
+# fetches bigiq auth token, then lists available scripts
+# bigiq scripts feature is very similar to ansible
+# A script within bigiq is copied to a managed device and executed,
+#  the result is collected and the script on the bigip is cleaned up
+# date: 4.5.2019
+#  - Ben Gordon (b.gordon@f5.com)
+
+- hosts: "bigiq01"
+  connection: local
+  gather_facts: no
+  vars:   # some vars to help filter api call
+    script_name: python_gethostname_test
+    scripts_url: /mgmt/shared/user-scripts?
+    filter:   # un-comment desired filters
+      - "$select=name,id,description,script&"    # select filter
+      #- "$filter=name+eq+'{{ script_name }}'&"  # filter by script name
+  tasks:
+
+  - name: Concatenate filter list
+    set_fact:
+      filter: "{{ filter | join('') }}"
+    when: filter.0 is defined   # if filter has at least one value
+
+  - name: Add api filter/select to url
+        # if an odata filter/select is defined, add it to url
+    set_fact:
+      scripts_url: "{{ scripts_url + filter }}"
+    when: filter.0 is defined   # if filter has at least one value
+
+  - name: get bigiq auth token
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/shared/authn/login"
+      method: POST
+      return_content: true
+      validate_certs: false
+      body_format: json
+      body: 
+        username: "{{ username }}"
+        password: "{{ latest_passwd }}"
+        logonProviderName: "{{ provider }}" 
+      status_code: 200
+    register: token
+  
+  - name: Calling bigiq API to list scripts
+    uri:
+      url: https://{{ ansible_host }}{{ scripts_url }}
+      method: GET
+      return_content: yes
+      status_code: 200
+      validate_certs: no
+      body_format: json
+      headers:
+        X-F5-Auth-Token: "{{ token.json.token.token }}"
+        Content-Type: "application/json"
+    register: script_list
+
+  - name: list script info
+    debug: msg="{{ script_list.json }}"
+
+      
