@@ -4,7 +4,7 @@ default_apass: "admin"
 default_rpass: "default"
 username: "admin"
 
-bigiq_logon_provider: "acs-radius-admin-auth"
+bigiq_logon_provider: "tmos"
 # logingProviderName: should typically be tmos
 provider: "tmos"
 

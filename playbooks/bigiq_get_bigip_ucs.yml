@@ -8,6 +8,12 @@
   connection: local
   gather_facts: no
   vars:
+    # auth details
+    provider: "{{bigiq_logon_provider}}"
+    auth_body:
+      username: "{{username}}"
+      password: "{{latest_passwd}}"
+      logonProviderName: "{{provider}}"
     bigips: # must be in inventory
       - bigip31.f5.com
       - bigip32.f5.com
@@ -18,19 +24,8 @@
     desc: "Executed via Ansible"
   tasks:
 
-  - name: get bigiq auth token
-    uri:
-      url: "https://{{ ansible_host }}/mgmt/shared/authn/login"
-      method: POST
-      return_content: true
-      validate_certs: false
-      body_format: json
-      body: 
-        username: "{{username}}"
-        password: "{{latest_passwd}}"
-        logonProviderName: "{{provider}}" 
-      status_code: 200
-    register: token
+  - name: Get bigiq auth token
+    include_tasks: bigiq_get_auth_token.yml
   
   - name: Calling bigiq API to collect ucs
     uri:

@@ -1,0 +1,56 @@
+---
+# Ansible playbook to list bigiq managed bigipq
+
+# fetches bigiq auth token, calls device list via api, 
+#   Ben Gordon (b.gordon@f5.com) - 4.5.2019
+
+# 
+
+- hosts: "bigiq01"
+  connection: local
+  gather_facts: no
+  vars:   
+  # auth details
+    provider: "{{bigiq_logon_provider}}"
+  
+    auth_body:
+      username: "{{username}}"
+      password: "{{latest_passwd}}"
+      logonProviderName: "{{provider}}"
+    hostname: bigip31.f5.com  
+    devices_url: /mgmt/shared/resolver/device-groups/cm-bigip-allDevices/devices?
+    filter:   # un-comment desired filters
+      - "$select=hostname,managementAddress,uuid&"    # select file name and object name from ucs properties
+      - "$filter=hostname+eq+'{{ hostname }}'&"  # filter by hostname
+  tasks:
+
+  - name: Concatenate filter list
+    set_fact:
+      filter: "{{ filter | join('') }}"
+    when: filter.0 is defined   # if filter has at least one value
+
+  - name: Add api filter/select to url
+        # if an odata filter/select is defined, add it to url
+    set_fact:
+      devices_url: "{{ devices_url + filter }}"
+    when: filter.0 is defined   # if filter has at least one value
+
+  - name: Get bigiq auth token
+    include_tasks: bigiq_get_auth_token.yml
+  
+  - name: Calling API to get BIG-IQ device list for Ansible inventory
+    uri:
+      url: https://{{ ansible_host }}{{ devices_url }}
+      method: GET
+      return_content: yes
+      status_code: 200
+      validate_certs: no
+      headers:
+        X-F5-Auth-Token: "{{token.json.token.token}}"
+        Content-Type: "application/json"
+        body_format: json
+    register: json_response
+
+  - name: list bigiq managed bigips
+    debug: msg="{{ json_response.json }}"
+

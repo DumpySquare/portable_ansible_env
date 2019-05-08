@@ -1,0 +1,61 @@
+---
+
+# Ansible playbook to call bigiq api to uploads a script
+
+# fetches bigiq auth token, then uploads a scripts# bigiq scripts feature is very similar to ansible
+# A script within bigiq is copied to a managed device and executed,
+#  the result is collected and the script on the bigip is cleaned up
+# date: 4.5.2019
+#  - Ben Gordon (b.gordon@f5.com)
+
+- hosts: "bigiq01"
+  connection: local
+  gather_facts: no
+  vars:   
+    hostname: bigip31.f5.com  # device to execute script on
+    script_name: python_get_info
+    # auth details
+    provider: "{{bigiq_logon_provider}}"
+    auth_body:
+      username: "{{username}}"
+      password: "{{latest_passwd}}"
+      logonProviderName: "{{provider}}"
+    post_body: # script details
+      name: "Script_execution task name alpha"  # I have trouble naming this...
+      deviceReferences:   # tells bigiq what hosts to do it to
+        #- link: https://localhost/mgmt/shared/resolver/device-groups/cm-bigip-allBigIpDevices/devices?$filter=hostname+eq+'{{ hostname }}'
+        - link: https://localhost/mgmt/shared/resolver/device-groups/cm-bigip-allBigIpDevices/devices/18cb7507-6fdf-4ed2-9c04-55518158b1aa
+      scriptReference:
+        #link: https://localhost/mgmt/shared/user-scripts?$filter=script+eq+'{{ script_name }}'
+        link: https://localhost/mgmt/shared/user-scripts/04b5e68f-14a5-4988-bfed-792f4a1219d7
+      timeoutInSeconds: 600
+    user_script_exec_url: /mgmt/shared/user-script-execution
+  tasks:
+
+  - name: Get bigiq auth token
+    include_tasks: bigiq_get_auth_token.yml
+  
+  - name: Calling bigiq API to execite script on managed bigip
+    uri:
+      url: https://{{ ansible_host }}/mgmt/shared/user-script-execution
+      method: POST
+      return_content: yes
+      status_code: 200, 202
+      validate_certs: no
+      body_format: json
+      headers:
+        X-F5-Auth-Token: "{{ token.json.token.token }}"
+        Content-Type: "application/json"
+      body: "{{ post_body }}"
+        #name: "Script"
+        #deviceReferences:   # tells bigiq what hosts to do it to
+        #  - link: https://localhost/mgmt/shared/resolver/device-groups/cm-bigip-allBigIpDevices/devices/#18cb7507-6fdf-4ed2-9c04-55518158b1aa
+        #scriptReference:
+        #  link: https://localhost/mgmt/shared/user-scripts/04b5e68f-14a5-4988-bfed-792f4a1219d7
+        #timeoutInSeconds: 600
+    register: script_exe
+
+  - name: show executed script info
+    debug: msg="{{ script_exe.json }}"
+
+      

@@ -7,11 +7,18 @@
 - hosts: "bigiq01"
   connection: local
   gather_facts: no
-  vars:   # some vars to help filter api call
+  vars:   
+    # auth details
+    provider: "{{bigiq_logon_provider}}"
+    auth_body:
+      username: "{{username}}"
+      password: "{{latest_passwd}}"
+      logonProviderName: "{{provider}}"
+    # some vars to help filter api call
     hostname: bigip32.f5.com  
     ucs_url: /mgmt/cm/system/backup-restore?
     filter:   # un-comment desired filters
-      #- "$select=archiveFileName,name,id&"    # select file name and object name from ucs properties
+      - "$select=archiveFileName,name,id&"    # select file name and object name from ucs properties
       #- "$filter=device/hostname+eq+'{{ hostname }}'&"  # filter by hostname
   tasks:
 
@@ -26,19 +33,8 @@
       ucs_url: "{{ ucs_url + filter }}"
     when: filter.0 is defined   # if filter has at least one value
 
-  - name: get bigiq auth token
-    uri:
-      url: "https://{{ ansible_host }}/mgmt/shared/authn/login"
-      method: POST
-      return_content: true
-      validate_certs: false
-      body_format: json
-      body: 
-        username: "{{ username }}"
-        password: "{{ latest_passwd }}"
-        logonProviderName: "{{ provider }}" 
-      status_code: 200
-    register: token
+  - name: Get bigiq auth token
+    include_tasks: bigiq_get_auth_token.yml
   
   - name: Calling bigiq API to list ucs
     uri:
@@ -52,14 +48,17 @@
         X-F5-Auth-Token: "{{ token.json.token.token }}"
         Content-Type: "application/json"
     register: ucs_list
-    
-  - name: List ucs files    # listing results after the query, for demo purposes
-    debug: msg="{{ item }}"
-    with_items: |
-      {% for item in ucs_list['json']['items'] %}
-      --- {{ item.name }} --- {{ item.id }} ---
-      {% endfor %}
-    when: |
-      "ucs_list.name is defined"
-      "ucs_list.id is defined"
+
+  - name: list script info
+    debug: msg="{{ ucs_list.json }}"
+  
+#  - name: List ucs files    # listing results after the query, for demo purposes
+#    debug: msg="{{ item }}"
+#    with_items: |
+#      {% for item in ucs_list['json']['items'] %}
+#      --- {{ item.name }} --- {{ item.id }} ---
+#      {% endfor %}
+#    when: |
+#      "ucs_list.name is defined"
+#      "ucs_list.id is defined"
       

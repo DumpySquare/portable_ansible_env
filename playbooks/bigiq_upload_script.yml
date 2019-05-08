@@ -1,0 +1,49 @@
+---
+
+# Ansible playbook to call bigiq api to uploads a script
+
+# fetches bigiq auth token, then uploads a scripts# bigiq scripts feature is very similar to ansible
+# A script within bigiq is copied to a managed device and executed,
+#  the result is collected and the script on the bigip is cleaned up
+# date: 4.5.2019
+#  - Ben Gordon (b.gordon@f5.com)
+
+- hosts: "bigiq01"
+  connection: local
+  gather_facts: no
+  vars:   
+    # auth details
+    provider: "{{bigiq_logon_provider}}"
+    auth_body:
+      username: "{{username}}"
+      password: "{{latest_passwd}}"
+      logonProviderName: "{{provider}}"
+    local_script: bash_get_info.sh
+    script_details: # script details
+      name: "{{ local_script }}"
+      description: "managed via ansible"
+      script: "{{ lookup('file', '../scripts/{{ local_script }}') }}"
+    scripts_url: /mgmt/shared/user-scripts?
+  tasks:
+
+  - name: Get bigiq auth token
+    include_tasks: bigiq_get_auth_token.yml
+  
+  - name: Calling bigiq API to upload script
+    uri:
+      url: https://{{ ansible_host }}{{ scripts_url }}
+      method: POST
+      return_content: yes
+      status_code: 200
+      validate_certs: no
+      body_format: json
+      headers:
+        X-F5-Auth-Token: "{{ token.json.token.token }}"
+        Content-Type: "application/json"
+      body: "{{ script_details }}"
+    register: script_up
+
+  - name: list script info
+    debug: msg="{{ script_up.json }}"
+
+      
