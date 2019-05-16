@@ -15,23 +15,3 @@
         gather_subset: devices
         provider: "{{ provider }}"
       register: devices
-
-
-#---
-#- name: Create objects only on the active DG member
-#  hosts: my_dg
-#  gather_facts: False
-#  connection: local
-#  vars:
-#    provider:
-#      password: "{{ bigip_password }}"
-#      server: "{{ ansible_host }}"
-#      user: "{{ bigip_username }}"
-#      validate_certs: False
-#
-#  tasks:
-#    - name: Collect bigip facts
-#      bigip_device_facts:
-#        gather_subset: devices
-#        provider: "{{ provider }}"
-#      register: devices
