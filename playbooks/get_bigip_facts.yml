@@ -1,0 +1,17 @@
+---
+
+- hosts: "{{ host }}"
+  connection: local
+  vars:
+    provider:
+      server: "{{ ansible_host }}"
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"  
+      validate_certs: no
+  tasks:
+
+    - name: Collect BIG-IP facts
+      bigip_device_facts:
+        gather_subset: devices
+        provider: "{{ provider }}"
+      register: devices

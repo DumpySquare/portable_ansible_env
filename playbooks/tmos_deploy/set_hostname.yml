@@ -1,0 +1,15 @@
+---
+
+- hosts: "{{ host }}"
+  connection: local
+  tasks:
+
+    - name: Set the hostname defined by the ansible inventory
+      bigip_hostname:
+        hostname: "{{ host }}"
+        provider:
+          server: "{{ ansible_host }}"
+          user: "{{username}}"
+          password: "{{ latest_passwd }}"
+        validate_certs: no
+      #delegate_to: localhost

@@ -1,0 +1,23 @@
+
+- name: Download file with checksum url (sha256)
+  get_url:
+    url: "{{ latest_do_rpm }}"
+    dest: /
+    checksum: "{{ latest_do_rpm_check }}"
+
+
+
+  *** latest DO rpm  ***
+  https://github.com/F5Networks/f5-declarative-onboarding/blob/master/dist/f5-declarative-onboarding-1.4.0-1.noarch.rpm
+
+
+  *** Downloading and installing the Declarative Onboarding package  ***
+  https://clouddocs.f5.com/products/extensions/f5-declarative-onboarding/latest/installation.html
+
+
+  *** Working With iControl LX/iApps LX RPM Packages  ***
+  https://clouddocs.f5.com/products/iapp/iapp-lx/tmos-14_0/icontrollx_pacakges/working_with_icontrollx_packages.html
+
+
+  *** used to manage iappls packages on bigip - should be able to use this to install DO on bigiQ  ***
+  https://docs.ansible.com/ansible/latest/modules/bigip_iapplx_package_module.html

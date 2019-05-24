@@ -1,0 +1,49 @@
+---
+
+# tested on v12.1.2 to 14.1 - 5.15.2019
+
+- name: give admin bash/advanced shell access
+  bigip_user:
+    state: present
+    username_credential: admin
+    shell: bash:
+    provider:
+      server: "{{ ansible_host }}"
+      user: "{{ username }}"
+      password: "{{ latest_passwd }}"
+  delegate_to: localhost
+
+
+
+
+#  *** was originall using the below but was only compatible with v14+
+#  *** the bigip_user module is more compatible across versions
+#
+#- name: Check admin account details
+#  uri:
+#    url: "https://{{ ansible_host }}/mgmt/shared/authz/users/admin"
+#    method: GET
+#    body_format: json
+#    validate_certs: no
+#    force_basic_auth: yes
+#    user: "{{ username }}"
+#    password: "{{ latest_passwd }}"
+#    headers:
+#      Content-Type: "application/json"
+#  register: admin_account
+#  delegate_to: localhost
+#
+#- name: Give admin advanced shell access
+#  uri:
+#    url: "https://{{ ansible_host }}/mgmt/shared/authz/users/admin"
+#    method: PATCH
+#    body: '{"shell":"bash"}'
+#    body_format: json
+#    validate_certs: no
+#    force_basic_auth: yes
+#    user: "{{ username }}"
+#    password: "{{ latest_passwd }}"
+#    headers:
+#      Content-Type: "application/json"
+#  delegate_to: localhost
+#  when: '"bash" not in admin_account.json.shell'
