@@ -6,7 +6,7 @@
   bigip_user:
     state: present
     username_credential: admin
-    shell: bash:
+    shell: bash
     provider:
       server: "{{ ansible_host }}"
       user: "{{ username }}"

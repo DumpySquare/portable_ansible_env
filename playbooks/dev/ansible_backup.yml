@@ -1,0 +1,13 @@
+---
+
+- hosts: localhost
+  gather_facts: yes   # needed for current date/time
+  vars:
+    date: "{{ ansible_date_time.iso8601_basic_short }}"
+  tasks:
+  
+  - name: Create full local Ansible backup
+    archive:
+     path: /
+     dest: "../ansible_backup_{{ date }}.tar.gz"
+     format: gz

@@ -1,0 +1,31 @@
+---
+
+# run this playbook with: ansible-playbook -i localhost, test.yml
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  vars:
+    admin_update: "{{ lookup('file', 'test_admin_update.txt') }}"
+  tasks:
+
+#  - name: checking admin_update response
+#    debug: msg="{{ admin_update }}"
+  
+  - name: Get password that worked
+    set_fact:
+      pswd: "{{ item.item }}"
+    with_items: "{{ admin_update.results }}"
+    when: item.status is defined and item.status == 200
+
+  - name: list statuss
+    debug: 
+      msg:
+      - "{{ pswd }}"
+      - "{{ admin_update.results | map(attribute='item') | list }}"
+    #when: admin_update.results | map(attribute='status') == "200"
+      
+  - name: list statuss
+    debug: 
+      msg: "{{ admin_update.results | map(attribute='status') | list }}"
+

@@ -1,0 +1,22 @@
+---
+# test.yml
+
+# run this playbook with: ansible-playbook -i localhost, test.yml
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  tasks:
+  - name: check
+    shell: "[ {{item}} -ne 2 ]"
+    register: checks
+    ignore_errors: yes
+    changed_when: false
+    when: checks is not defined or checks.rc != 0
+    with_items: [2,3,2,4,5]
+  - name: set
+    set_fact: first_working={{ item.item }}
+    when: "'rc' in item and item.rc == 0"
+    with_items: "{{ checks.results }}"
+  - debug: var=first_working
+  # Note that first_working will be undefined if no check succeeded

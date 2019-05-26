@@ -1,0 +1,85 @@
+---
+# test.yml
+
+# run this playbook with: ansible-playbook -i localhost, test.yml
+
+- hosts: tpdcvcmpgtminth01.f5.medcity.net
+  connection: local
+  gather_facts: no
+  vars:
+    old_passl:
+      #- pass1
+      - pass2
+      - supersecret
+      - pass4
+  tasks:
+
+#  - name: checking
+#    debug:
+#      msg: "password: {{ item }} "
+#    loop: "{{ old_passl }}"
+
+#  - name: Changing root password with 3/4 "{{ id_34 }}"
+#    bigip_user:
+#      username_credential: "{{ username }}"
+#      password_credential: "{{ latest_passwd }}"
+#      provider:
+#        server: "{{ ansible_host }}"
+#        user: "{{ username }}"
+#        password: "{{ item }}"
+#        validate_certs: no
+#        timeout: 3
+#    loop: "{{ old_passl }}"
+#    ignore_errors: yes
+
+  - name: Updating the admin password
+    uri:
+      url: "https://{{ ansible_host }}/mgmt/shared/authz/users/admin"
+      method: PATCH
+      body: 
+        oldPassword: "{{ item }}"
+        password: "{{ latest_passwd }}"
+      body_format: json
+      validate_certs: no
+      status_code: 200, 401   #401 so we can continue if password has already been updated
+      force_basic_auth: yes
+      user: "{{ username }}"
+      password: "{{ item }}"
+      headers:
+        Content-Type: "application/json"
+    delegate_to: localhost
+    register: admin_update
+    loop: "{{ old_passl }}"
+    when: admin_update is not defined or admin_update.status != 200
+    #until: admin_update.status == 200
+    # or admin_update.results.status is not 200
+    #when: admin_update.changed is true
+
+  - local_action: copy content="{{ admin_update }}" dest="test_admin_update.txt"
+
+#  - name: checking admin_update response
+#    debug: msg="{{ admin_update.items()[-1] }}"
+#
+#  - name: list statuss
+#    debug: 
+#      msg: "{{ admin_update.results | map(attribute='item') | list }}"
+#    #when: admin_update.results | map(attribute='status') == 200
+#      
+#  - name: list statuss
+#    debug: 
+#      msg: "{{ admin_update.results | map(attribute='status') | list }}"
+  
+
+
+
+#  - name: find successful password
+#    set_fact: 
+#      passwd: true
+#    with_
+
+#  - name: debug
+#    debug:
+#      msg: |
+#        {% for results in admin_update %}
+#        {{status}}  gggggg
+#        {% endfor %}
