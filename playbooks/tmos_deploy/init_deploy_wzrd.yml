@@ -76,7 +76,7 @@
     include_tasks: set_snmp.yml
 
   - name: Set syslog destination using custom play
-    include_tasks: "{{syslog_play}}"
+    include_tasks: "../{{syslog_play}}"
     when: syslog_play is defined
     # this var points to a customer specific syslog play
     # that sets syslog destination depending on datacenter
@@ -119,7 +119,7 @@
     when: users is defined  
 
   - name: Save config
-    include_tasks: save_sys_config.yml
+    include_tasks: ../save_sys_config.yml
 
 
 
