@@ -83,7 +83,7 @@
 
   - name: Set syslog normally
     include_tasks: set_syslog.yml
-    when: syslog is defined
+    when: syslog is defined and syslog_play is not defined
 
   - name: Set RADIUS admin auth
     include_tasks: set_radius_sys_auth.yml
