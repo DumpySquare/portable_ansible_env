@@ -1,0 +1,40 @@
+---
+
+- hosts: localhost
+  connection: local
+  gather_facts: no
+  vars_prompt:
+    - name: "dest"
+      prompt: "hostname(inv-fqdn/IP) to update"
+      private: no
+      #default: "192.168.1.5" # only used for testing
+    
+  tasks:
+  - name: fix root/admin passwords
+    f5_fix_pass:
+      bigip: "{{ dest }}"
+      local_user: "root"  # root or admin
+      new_password: "{{ latest_passwd }}" # single string
+      old_password: "{{ old_passl }}"   # can be a list
+      #  - pass1
+      #  - pass2
+      #  - pass2
+    register: result
+
+  - debug: var=result  
+
+## future enahancements:
+# add remote user like radius/tacacs to try first, so we don't have to brut force our way in
+# - utilize the "provider" dict like other F5 modules
+# - this would also require checking if in tmsh shell and/or getting there if needed
+# -- it would require different commands if in tmsh or not
+# update the "fields" dict from play definition to "argument_spec" to be inline with f5 standards
+# update script output and hide passwords - DONE
+# allow script to use rsa keys...?
+
+
+
+# - test no passwords working - DONE - set module fail_json with error message
+# - test no network connectivity - HALF DONE
+# -- if no IP, it won't resolve and the socket fails
+# -- 

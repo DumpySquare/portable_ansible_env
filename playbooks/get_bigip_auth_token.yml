@@ -1,0 +1,22 @@
+---
+# Get bigip auth token
+
+# It seems that v13+ has basic auth disabled by default now-maybe
+# to be called by other play - will not run standalone
+# Updated:  7.8.2019
+#   Ben Gordon (b.gordon@f5.com)
+
+
+- name: get auth token
+  uri:
+    url: "https://{{ ansible_host }}/mgmt/shared/authn/login"
+    method: POST
+    body_format: json
+    return_content: true
+    validate_certs: false
+    body: 
+      username: "{{username}}"
+      password: "{{latest_passwd}}"
+      #logonProviderName: "{{provider}}" 
+    status_code: 200
+  register: token

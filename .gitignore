@@ -9,6 +9,6 @@ bin/*
 .kitchen.local.yml
 .gitattributes
 
-
+backup*/**
 *.retry
 customer*/**
