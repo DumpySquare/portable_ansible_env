@@ -1,3 +1,4 @@
 {
-    "remote.SSH.showLoginTerminal": true
+    "remote.SSH.showLoginTerminal": true,
+    "python.pythonPath": "C:\\Python27\\python.exe"
 }

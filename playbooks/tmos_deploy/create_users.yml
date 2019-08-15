@@ -7,7 +7,7 @@
     shell: "{{item.value.shell}}"
     state: present
     provider:
-      server: "{{ansible_host}}"
+      server: "{{new_host}}"
       user: "{{username}}"
       password: "{{latest_passwd}}"
       validate_certs: no

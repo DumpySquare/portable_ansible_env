@@ -1,10 +1,19 @@
 ---
 
-- name: base config dyn script
-  script: "{{base_config_deploy_script}}"
-  remote_user: root
-  args:
-    executable: python
-  delegate_to: "{{ansible_host}}"
-   
+- hosts: localhost
+  #connection: local
+  gather_facts: no
+  vars_prompt:
+    - name: "dest"
+      prompt: "hostname(inv-fqdn/IP) to update"
+      private: no
+      #default: "192.168.1.5" # only used for testing
     
+  tasks:
+  - name: base config dyn script
+    script: "{{base_config_deploy_script}}"
+    remote_user: "root"
+    #ansible_pass: "greatpassword"
+    args:
+      executable: python
+    delegate_to: "{{ dest }}"

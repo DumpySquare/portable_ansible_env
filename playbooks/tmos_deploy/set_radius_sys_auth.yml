@@ -3,13 +3,15 @@
 - name: Set RADIUS Admin Auth via tmsh commands
   bigip_command:
     commands:
-      - create auth radius-server radius1 { secret {{radius.secret}} server {{radius.dest1}} }
-      - create auth radius-server radius2 { secret {{radius.secret}} server {{radius.dest2}} }
-      - create auth radius system-auth servers replace-all-with { radius1 radius2 }
+      - create auth radius-server system_auth_name1 { secret {{radius.secret}} server {{radius.dest1}} }
+      - create auth radius-server system_auth_name2 { secret {{radius.secret}} server {{radius.dest2}} }
+      - create auth radius system-auth servers replace-all-with { system_auth_name1 system_auth_name2 }
+      - modify auth remote-user { default-role admin remote-console-access tmsh }
       - modify auth source { type radius }
     server: "{{ansible_host}}"
     user: "{{username}}"
     password: "{{latest_passwd}}"
     validate_certs: no
 
-
+#  bigip_device_auth only supports tacacs as of 7.23.2019
+# https://github.com/F5Networks/f5-ansible/issues/1050

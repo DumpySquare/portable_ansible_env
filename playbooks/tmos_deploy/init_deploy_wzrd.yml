@@ -8,25 +8,15 @@
 # admin routes aren't part of the initial configuration wizard, but they \
 #  are needed to get everything working for bigiq import mainly time sync
 
-- hosts: "{{ host }}"
+- hosts: localhost
   connection: local
   gather_facts: no
   environment:
     F5_VALIDATE_CERTS: false
-  #vars:
-  #  provider: # general provider dict
-  #    server: "{{ host }}"
-  #    user: "{{ id_34 }}"
-  #    password: "{{ id_34_pass }}"
-  #    validate_certs: no
+  vars:
+    ansible_host: "{{ new_host }}"
   vars_prompt:
-  #  - name: "id_34"
-  #    prompt: "Enter your 3/4ID"
-  #    private: no
-  #    default: "ian7423"
-  #  - name: "id_34_pass"
-  #    prompt: "Enter password"
-    - name: "host"
+    - name: "new_host"
       prompt: "hostname(inv-fqdn): "
       private: no
 
